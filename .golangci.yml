@@ -8,11 +8,10 @@ linters:
     - ineffassign
     - staticcheck
     - unused
+  exclusions:
+    paths:
+      - ^third-party-projects/
+      - ^bin/
 
 run:
   timeout: 5m
-
-issues:
-  exclude-dirs:
-    - third-party-projects
-    - bin
