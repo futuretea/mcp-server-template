@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
 
+	"github.com/futuretea/mcp-server-template/internal/toolcatalog"
 	"github.com/futuretea/mcp-server-template/pkg/core/config"
 	"github.com/futuretea/mcp-server-template/pkg/core/version"
 	"github.com/futuretea/mcp-server-template/pkg/toolset"
@@ -50,20 +51,15 @@ func NewServer(configuration Configuration) (*Server, error) {
 }
 
 func (s *Server) registerTools() error {
-	catalog := make([]toolset.ServerTool, 0)
-	for _, ts := range s.configuration.Toolsets {
-		if ts == nil {
-			continue
-		}
-		catalog = append(catalog, ts.GetTools()...)
-	}
-
-	filtered := toolset.FilterTools(catalog, toolset.FilterOptions{
+	filtered, err := toolcatalog.Build(s.configuration.Toolsets, toolset.FilterOptions{
 		EnabledTools:    s.configuration.EnabledTools,
 		DisabledTools:   s.configuration.DisabledTools,
 		EnabledDomains:  s.configuration.EnabledDomains,
 		DisabledDomains: s.configuration.DisabledDomains,
 	})
+	if err != nil {
+		return fmt.Errorf("build tool catalog: %w", err)
+	}
 
 	for _, tool := range filtered {
 		s.registerTool(tool)
@@ -78,7 +74,12 @@ func (s *Server) registerTools() error {
 }
 
 func (s *Server) registerTool(tool toolset.ServerTool) {
-	handler := server.ToolHandlerFunc(func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	s.server.AddTool(tool.Tool, newToolHandler(tool))
+	s.enabledTools = append(s.enabledTools, tool.Tool.Name)
+}
+
+func newToolHandler(tool toolset.ServerTool) server.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		params := request.GetArguments()
 		if params == nil {
 			params = map[string]any{}
@@ -86,10 +87,7 @@ func (s *Server) registerTool(tool toolset.ServerTool) {
 
 		result, err := tool.Handler(ctx, params)
 		return NewTextResult(result, err), nil
-	})
-
-	s.server.AddTool(tool.Tool, handler)
-	s.enabledTools = append(s.enabledTools, tool.Tool.Name)
+	}
 }
 
 // GetEnabledTools returns registered tool names.

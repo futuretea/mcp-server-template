@@ -39,7 +39,10 @@ func newToolsListCommand(streams IOStreams, cfgFile *string, v *viper.Viper) *co
 			if err != nil {
 				return err
 			}
-			tools := buildToolCatalog(cfg)
+			tools, err := buildToolCatalog(cfg)
+			if err != nil {
+				return err
+			}
 			if jsonOutput {
 				return printToolSummariesJSON(streams.Out, tools)
 			}
@@ -64,7 +67,10 @@ func newToolsDescribeCommand(streams IOStreams, cfgFile *string, v *viper.Viper)
 			if err != nil {
 				return err
 			}
-			tools := buildToolCatalog(cfg)
+			tools, err := buildToolCatalog(cfg)
+			if err != nil {
+				return err
+			}
 			tool, ok := findTool(tools, args[0])
 			if !ok {
 				return fmt.Errorf("unknown tool %q; run 'mcp-server tools list' to see available tools", args[0])
@@ -101,7 +107,10 @@ func newToolsCallCommand(streams IOStreams, cfgFile *string, v *viper.Viper) *co
 			if err != nil {
 				return err
 			}
-			tools := buildToolCatalog(cfg)
+			tools, err := buildToolCatalog(cfg)
+			if err != nil {
+				return err
+			}
 			tool, ok := findTool(tools, args[0])
 			if !ok {
 				return fmt.Errorf("unknown tool %q; run 'mcp-server tools list' to see available tools", args[0])
@@ -110,8 +119,8 @@ func newToolsCallCommand(streams IOStreams, cfgFile *string, v *viper.Viper) *co
 			if err != nil {
 				return err
 			}
-			_, _ = fmt.Fprintln(streams.Out, result)
-			return nil
+			_, err = fmt.Fprintln(streams.Out, result)
+			return err
 		},
 	}
 	command.Flags().StringVar(&rawParams, "params", "{}", "tool parameters as a JSON object")
@@ -187,15 +196,23 @@ func printToolSummariesJSON(out io.Writer, tools []toolset.ServerTool) error {
 }
 
 func printToolDescription(out io.Writer, description toolDescription) error {
-	_, _ = fmt.Fprintf(out, "Name:        %s\n", description.Name)
-	_, _ = fmt.Fprintf(out, "Domain:      %s\n", description.Domain)
-	_, _ = fmt.Fprintf(out, "Description: %s\n", description.Description)
+	if _, err := fmt.Fprintf(out, "Name:        %s\n", description.Name); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "Domain:      %s\n", description.Domain); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(out, "Description: %s\n", description.Description); err != nil {
+		return err
+	}
 	if description.InputSchema != nil {
 		raw, err := json.MarshalIndent(description.InputSchema, "", "  ")
 		if err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintf(out, "InputSchema:\n%s\n", raw)
+		if _, err := fmt.Fprintf(out, "InputSchema:\n%s\n", raw); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -221,6 +238,9 @@ func parseToolParams(rawParams, paramsFile string, stdin io.Reader) (map[string]
 	params := map[string]any{}
 	if err := json.Unmarshal([]byte(payload), &params); err != nil {
 		return nil, fmt.Errorf("parse tool params JSON: %w", err)
+	}
+	if params == nil {
+		return nil, fmt.Errorf("parse tool params JSON: expected an object")
 	}
 	return params, nil
 }

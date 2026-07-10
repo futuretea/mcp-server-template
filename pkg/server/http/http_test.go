@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -35,11 +36,25 @@ func TestHealthz(t *testing.T) {
 		t.Fatalf("healthy status=%d body=%q", rec.status, rec.body)
 	}
 
-	req = mustNewRequest(t, http.MethodHead, internalhttp.HealthEndpoint)
-	rec = &responseRecorder{header: make(http.Header)}
-	handler.ServeHTTP(rec, req)
-	if rec.status != http.StatusOK || string(rec.body) != "healthy" {
-		t.Fatalf("HEAD healthy status=%d body=%q", rec.status, rec.body)
+	testServer := httptest.NewServer(handler)
+	defer testServer.Close()
+	client := testServer.Client()
+	client.Timeout = 2 * time.Second
+	req, err = http.NewRequestWithContext(t.Context(), http.MethodHead, testServer.URL+internalhttp.HealthEndpoint, nil)
+	if err != nil {
+		t.Fatalf("NewRequest HEAD: %v", err)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("HEAD healthz: %v", err)
+	}
+	body, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if err != nil {
+		t.Fatalf("read HEAD healthz body: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK || len(body) != 0 || resp.ContentLength != int64(len("healthy")) {
+		t.Fatalf("HEAD healthy status=%d content_length=%d body=%q", resp.StatusCode, resp.ContentLength, body)
 	}
 
 	req = mustNewRequest(t, http.MethodPost, internalhttp.HealthEndpoint)
@@ -67,38 +82,35 @@ func TestServeListenerShutdown(t *testing.T) {
 	cfg := &config.StaticConfig{Port: listener.Addr().(*net.TCPAddr).Port, Listen: "127.0.0.1"}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	done := make(chan error, 1)
 	go func() {
 		done <- internalhttp.ServeListener(ctx, mcpServer, cfg, listener)
 	}()
 
-	deadline := time.Now().Add(2 * time.Second)
-	var lastErr error
-	for time.Now().Before(deadline) {
-		resp, err := http.Get("http://" + listener.Addr().String() + internalhttp.HealthEndpoint)
-		if err == nil {
-			body, _ := io.ReadAll(resp.Body)
-			_ = resp.Body.Close()
-			if resp.StatusCode == http.StatusOK && string(body) == "healthy" {
-				cancel()
-				select {
-				case err := <-done:
-					if err != nil {
-						t.Fatalf("ServeListener: %v", err)
-					}
-					return
-				case <-time.After(2 * time.Second):
-					t.Fatal("ServeListener did not exit after cancel")
-				}
-			}
-			lastErr = nil
-		} else {
-			lastErr = err
-		}
-		time.Sleep(20 * time.Millisecond)
+	client := &http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get("http://" + listener.Addr().String() + internalhttp.HealthEndpoint)
+	if err != nil {
+		t.Fatalf("GET healthz: %v", err)
 	}
+	body, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if err != nil {
+		t.Fatalf("read healthz body: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK || string(body) != "healthy" {
+		t.Fatalf("healthz status=%d body=%q", resp.StatusCode, body)
+	}
+
 	cancel()
-	t.Fatalf("healthz not ready: %v", lastErr)
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("ServeListener: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("ServeListener did not exit after cancel")
+	}
 }
 
 type responseRecorder struct {

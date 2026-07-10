@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/futuretea/mcp-server-template/internal/toolcatalog"
 	"github.com/futuretea/mcp-server-template/pkg/core/config"
 	"github.com/futuretea/mcp-server-template/pkg/core/version"
 	"github.com/futuretea/mcp-server-template/pkg/toolset"
@@ -84,12 +85,8 @@ func defaultToolsets() []toolset.Toolset {
 	return []toolset.Toolset{&example.Toolset{}}
 }
 
-func buildToolCatalog(cfg *config.StaticConfig) []toolset.ServerTool {
-	catalog := make([]toolset.ServerTool, 0)
-	for _, ts := range defaultToolsets() {
-		catalog = append(catalog, ts.GetTools()...)
-	}
-	return toolset.FilterTools(catalog, toolset.FilterOptions{
+func buildToolCatalog(cfg *config.StaticConfig) ([]toolset.ServerTool, error) {
+	return toolcatalog.Build(defaultToolsets(), toolset.FilterOptions{
 		EnabledTools:    cfg.EnabledTools,
 		DisabledTools:   cfg.DisabledTools,
 		EnabledDomains:  cfg.EnabledDomains,
@@ -101,8 +98,9 @@ func newVersionCommand(streams IOStreams) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "version",
 		Short: "print version information",
-		Run: func(cmd *cobra.Command, args []string) {
-			_, _ = fmt.Fprintln(streams.Out, version.GetVersionInfo())
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, err := fmt.Fprintln(streams.Out, version.GetVersionInfo())
+			return err
 		},
 	}
 	command.SetOut(streams.Out)

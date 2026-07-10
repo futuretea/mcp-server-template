@@ -56,6 +56,19 @@ func TestNewServerRejectsEmptyToolFilter(t *testing.T) {
 	}
 }
 
+func TestNewServerRejectsDuplicateToolNames(t *testing.T) {
+	_, err := mcpserver.NewServer(mcpserver.Configuration{
+		StaticConfig: &config.StaticConfig{LogLevel: "info"},
+		Toolsets: []toolset.Toolset{
+			&example.Toolset{},
+			&example.Toolset{},
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), `duplicate tool name "echo"`) {
+		t.Fatalf("expected duplicate tool name error, got %v", err)
+	}
+}
+
 func TestNewTextResult(t *testing.T) {
 	ok := mcpserver.NewTextResult("hello", nil)
 	if ok.IsError || len(ok.Content) != 1 {

@@ -59,10 +59,22 @@ func TestValidate(t *testing.T) {
 }
 
 func TestGetListenAddress(t *testing.T) {
-	if got := (&config.StaticConfig{Port: 8080, Listen: "127.0.0.1"}).GetListenAddress(); got != "127.0.0.1:8080" {
-		t.Fatalf("GetListenAddress = %q", got)
+	tests := []struct {
+		name string
+		cfg  config.StaticConfig
+		want string
+	}{
+		{name: "stdio", cfg: config.StaticConfig{Port: 0, Listen: "127.0.0.1"}, want: ""},
+		{name: "IPv4", cfg: config.StaticConfig{Port: 8080, Listen: "127.0.0.1"}, want: "127.0.0.1:8080"},
+		{name: "hostname", cfg: config.StaticConfig{Port: 8080, Listen: "localhost"}, want: "localhost:8080"},
+		{name: "IPv6", cfg: config.StaticConfig{Port: 8080, Listen: "::1"}, want: "[::1]:8080"},
 	}
-	if got := (&config.StaticConfig{Port: 0, Listen: "127.0.0.1"}).GetListenAddress(); got != "" {
-		t.Fatalf("expected empty listen address for port 0, got %q", got)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.cfg.GetListenAddress(); got != tt.want {
+				t.Fatalf("GetListenAddress() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

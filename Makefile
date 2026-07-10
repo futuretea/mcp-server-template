@@ -1,4 +1,5 @@
 BINARY_NAME ?= mcp-server
+GOLANGCI_LINT ?= golangci-lint
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT ?= $(shell git rev-parse --verify --quiet HEAD 2>/dev/null || echo unknown)
 DATE ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -17,7 +18,11 @@ test:
 lint:
 	go vet ./...
 	test -z "$$(gofmt -l cmd internal pkg)"
-	@which golangci-lint >/dev/null 2>&1 && golangci-lint run ./... || echo "golangci-lint not installed, skipping"
+	@if command -v "$(GOLANGCI_LINT)" >/dev/null 2>&1; then \
+		$(GOLANGCI_LINT) run ./...; \
+	else \
+		echo "$(GOLANGCI_LINT) not installed, skipping"; \
+	fi
 
 format:
 	gofmt -w $$(find cmd internal pkg -name '*.go')

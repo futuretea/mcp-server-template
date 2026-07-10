@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -39,7 +41,7 @@ func (c *StaticConfig) GetListenAddress() string {
 	if c.Port == 0 {
 		return ""
 	}
-	return fmt.Sprintf("%s:%d", c.Listen, c.Port)
+	return net.JoinHostPort(c.Listen, strconv.Itoa(c.Port))
 }
 
 // LoadConfig loads configuration from defaults, optional YAML, environment, and flags.

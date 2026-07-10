@@ -27,19 +27,20 @@ func newCompletionCommand(streams IOStreams) *cobra.Command {
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"bash", "zsh", "fish", "powershell", "install"},
 		Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			switch args[0] {
 			case "install":
-				printCompletionInstall(streams.Out)
+				return printCompletionInstall(streams.Out)
 			case "bash":
-				_ = cmd.Root().GenBashCompletion(streams.Out)
+				return cmd.Root().GenBashCompletion(streams.Out)
 			case "zsh":
-				_ = cmd.Root().GenZshCompletion(streams.Out)
+				return cmd.Root().GenZshCompletion(streams.Out)
 			case "fish":
-				_ = cmd.Root().GenFishCompletion(streams.Out, true)
+				return cmd.Root().GenFishCompletion(streams.Out, true)
 			case "powershell":
-				_ = cmd.Root().GenPowerShellCompletionWithDesc(streams.Out)
+				return cmd.Root().GenPowerShellCompletionWithDesc(streams.Out)
 			}
+			return nil
 		},
 	}
 	command.SetOut(streams.Out)
@@ -47,8 +48,8 @@ func newCompletionCommand(streams IOStreams) *cobra.Command {
 	return command
 }
 
-func printCompletionInstall(out io.Writer) {
-	_, _ = fmt.Fprintln(out, `# Add the appropriate line to your shell profile:
+func printCompletionInstall(out io.Writer) error {
+	_, err := fmt.Fprintln(out, `# Add the appropriate line to your shell profile:
 
 # bash (~/.bashrc or ~/.bash_profile):
 source <(mcp-server completion bash)
@@ -61,4 +62,5 @@ mcp-server completion fish | source
 
 # PowerShell ($PROFILE):
 mcp-server completion powershell | Out-String | Invoke-Expression`)
+	return err
 }
