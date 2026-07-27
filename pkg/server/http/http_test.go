@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/futuretea/mcp-server-template/pkg/core/config"
-	internalhttp "github.com/futuretea/mcp-server-template/pkg/server/http"
-	mcpserver "github.com/futuretea/mcp-server-template/pkg/server/mcp"
-	"github.com/futuretea/mcp-server-template/pkg/toolset"
-	"github.com/futuretea/mcp-server-template/pkg/toolset/example"
+	"example.invalid/mcp-template-module-placeholder/pkg/core/config"
+	internalhttp "example.invalid/mcp-template-module-placeholder/pkg/server/http"
+	mcpserver "example.invalid/mcp-template-module-placeholder/pkg/server/mcp"
+	"example.invalid/mcp-template-module-placeholder/pkg/toolset"
+	"example.invalid/mcp-template-module-placeholder/pkg/toolset/example"
 )
 
 func TestHealthz(t *testing.T) {

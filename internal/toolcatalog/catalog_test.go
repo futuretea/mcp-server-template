@@ -5,8 +5,8 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 
-	"github.com/futuretea/mcp-server-template/internal/toolcatalog"
-	"github.com/futuretea/mcp-server-template/pkg/toolset"
+	"example.invalid/mcp-template-module-placeholder/internal/toolcatalog"
+	"example.invalid/mcp-template-module-placeholder/pkg/toolset"
 )
 
 func TestBuildRejectsVisibleDuplicateNames(t *testing.T) {

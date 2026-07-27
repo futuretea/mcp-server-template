@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/futuretea/mcp-server-template/pkg/core/config"
+	"example.invalid/mcp-template-module-placeholder/pkg/core/config"
 )
 
 func TestLoadConfigDefaults(t *testing.T) {

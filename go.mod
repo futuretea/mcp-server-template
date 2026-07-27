@@ -1,4 +1,4 @@
-module github.com/futuretea/mcp-server-template
+module example.invalid/mcp-template-module-placeholder
 
 go 1.25.10
 

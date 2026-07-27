@@ -5,7 +5,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 
-	"github.com/futuretea/mcp-server-template/pkg/toolset"
+	"example.invalid/mcp-template-module-placeholder/pkg/toolset"
 )
 
 func TestFilterTools(t *testing.T) {

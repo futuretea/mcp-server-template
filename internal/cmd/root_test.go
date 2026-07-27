@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/futuretea/mcp-server-template/internal/cmd"
+	"example.invalid/mcp-template-module-placeholder/internal/cmd"
 )
 
 func TestRootHelpListsSubcommands(t *testing.T) {
@@ -70,7 +70,7 @@ func TestVersionCommand(t *testing.T) {
 	if err := root.Execute(); err != nil {
 		t.Fatalf("version: %v", err)
 	}
-	if !strings.Contains(out.String(), "mcp-server") {
+	if !strings.Contains(out.String(), "mcp-template-binary-placeholder") {
 		t.Fatalf("unexpected version output: %q", out.String())
 	}
 }

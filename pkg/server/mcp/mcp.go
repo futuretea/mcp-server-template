@@ -9,10 +9,10 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/rs/zerolog/log"
 
-	"github.com/futuretea/mcp-server-template/internal/toolcatalog"
-	"github.com/futuretea/mcp-server-template/pkg/core/config"
-	"github.com/futuretea/mcp-server-template/pkg/core/version"
-	"github.com/futuretea/mcp-server-template/pkg/toolset"
+	"example.invalid/mcp-template-module-placeholder/internal/toolcatalog"
+	"example.invalid/mcp-template-module-placeholder/pkg/core/config"
+	"example.invalid/mcp-template-module-placeholder/pkg/core/version"
+	"example.invalid/mcp-template-module-placeholder/pkg/toolset"
 )
 
 // Configuration holds server startup settings.

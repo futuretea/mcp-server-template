@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/futuretea/mcp-server-template/internal/cmd"
+	"example.invalid/mcp-template-module-placeholder/internal/cmd"
 )
 
 func main() {

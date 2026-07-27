@@ -7,11 +7,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/futuretea/mcp-server-template/internal/toolcatalog"
-	"github.com/futuretea/mcp-server-template/pkg/core/config"
-	"github.com/futuretea/mcp-server-template/pkg/core/version"
-	"github.com/futuretea/mcp-server-template/pkg/toolset"
-	"github.com/futuretea/mcp-server-template/pkg/toolset/example"
+	"example.invalid/mcp-template-module-placeholder/internal/toolcatalog"
+	"example.invalid/mcp-template-module-placeholder/pkg/core/config"
+	"example.invalid/mcp-template-module-placeholder/pkg/core/version"
+	"example.invalid/mcp-template-module-placeholder/pkg/toolset"
+	"example.invalid/mcp-template-module-placeholder/pkg/toolset/example"
 )
 
 // IOStreams groups the streams used by the CLI.

@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/futuretea/mcp-server-template/pkg/core/config"
-	mcpserver "github.com/futuretea/mcp-server-template/pkg/server/mcp"
-	"github.com/futuretea/mcp-server-template/pkg/toolset"
-	"github.com/futuretea/mcp-server-template/pkg/toolset/example"
+	"example.invalid/mcp-template-module-placeholder/pkg/core/config"
+	mcpserver "example.invalid/mcp-template-module-placeholder/pkg/server/mcp"
+	"example.invalid/mcp-template-module-placeholder/pkg/toolset"
+	"example.invalid/mcp-template-module-placeholder/pkg/toolset/example"
 )
 
 func TestNewServerRegistersExampleTools(t *testing.T) {

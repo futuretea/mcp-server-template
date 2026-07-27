@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/futuretea/mcp-server-template/pkg/core/config"
-	"github.com/futuretea/mcp-server-template/pkg/core/logging"
-	internalhttp "github.com/futuretea/mcp-server-template/pkg/server/http"
-	mcpserver "github.com/futuretea/mcp-server-template/pkg/server/mcp"
+	"example.invalid/mcp-template-module-placeholder/pkg/core/config"
+	"example.invalid/mcp-template-module-placeholder/pkg/core/logging"
+	internalhttp "example.invalid/mcp-template-module-placeholder/pkg/server/http"
+	mcpserver "example.invalid/mcp-template-module-placeholder/pkg/server/mcp"
 )
 
 func newMCPCommand(streams IOStreams, cfgFile *string, v *viper.Viper) *cobra.Command {
@@ -18,13 +18,13 @@ func newMCPCommand(streams IOStreams, cfgFile *string, v *viper.Viper) *cobra.Co
 		Use:   "mcp",
 		Short: "start the MCP server",
 		Example: `  # stdio mode (default)
-  mcp-server mcp
+  mcp-template-binary-placeholder mcp
 
   # HTTP mode on loopback
-  mcp-server mcp --port 8080
+  mcp-template-binary-placeholder mcp --port 8080
 
   # HTTP mode on a custom listen address
-  mcp-server mcp --port 8080 --listen 127.0.0.1`,
+  mcp-template-binary-placeholder mcp --port 8080 --listen 127.0.0.1`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := bindCommonFlags(v, cmd); err != nil {
 				return err
