@@ -169,7 +169,7 @@ if [ "$dry_run" = true ]; then
     "$module" "$binary" "$npm_package" "$image"
   printf 'Would create .github/workflows/build.yaml\n'
   if [ "$with_release" = true ]; then
-    printf '%s\n' 'Would create release workflows, release.mk, npm/, and .github/ci/release-platforms.json'
+    printf '%s\n' 'Would create release workflows, release.mk, npm/, .github/ci/release-platforms.json, and append release usage documentation to both READMEs'
   fi
   exit 0
 fi
@@ -211,6 +211,8 @@ if [ "$with_release" = true ]; then
   replace_files '__MCP_DOCKER_REGISTRY__' "$registry" "${release_files[@]}"
   replace_files '__MCP_GO_VERSION__' "$go_version" "${release_files[@]}"
   replace_files '# __MCP_RELEASE_INCLUDE__' '-include release.mk' Makefile
+  cat templates/docs/release-usage.md >> README.md
+  cat templates/docs/release-usage.zh.md >> README.zh.md
 else
   replace_files '# __MCP_RELEASE_INCLUDE__' '' Makefile
 fi
