@@ -1,8 +1,11 @@
 package mcp
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -62,6 +65,9 @@ func (s *Server) registerTools() error {
 	}
 
 	for _, tool := range filtered {
+		if err := validateRawInputSchema(tool.Tool); err != nil {
+			return err
+		}
 		s.registerTool(tool)
 	}
 
@@ -71,6 +77,62 @@ func (s *Server) registerTools() error {
 
 	log.Info().Int("count", len(s.enabledTools)).Msg("registered MCP tools")
 	return nil
+}
+
+func validateRawInputSchema(tool mcp.Tool) error {
+	if tool.RawInputSchema == nil {
+		return nil
+	}
+
+	decoder := json.NewDecoder(bytes.NewReader(tool.RawInputSchema))
+	token, err := decoder.Token()
+	if err != nil {
+		return invalidRawInputSchema(tool, err)
+	}
+	if token != json.Delim('{') {
+		return fmt.Errorf("tool %q raw input schema must declare root type %q", tool.Name, "object")
+	}
+
+	var rootType any
+	foundRootType := false
+	for decoder.More() {
+		key, err := decoder.Token()
+		if err != nil {
+			return invalidRawInputSchema(tool, err)
+		}
+		if key == "type" {
+			if foundRootType {
+				return fmt.Errorf("tool %q raw input schema must declare root type %q only once", tool.Name, "object")
+			}
+			foundRootType = true
+			if err := decoder.Decode(&rootType); err != nil {
+				return invalidRawInputSchema(tool, err)
+			}
+			continue
+		}
+
+		var value json.RawMessage
+		if err := decoder.Decode(&value); err != nil {
+			return invalidRawInputSchema(tool, err)
+		}
+	}
+	if _, err := decoder.Token(); err != nil {
+		return invalidRawInputSchema(tool, err)
+	}
+	if _, err := decoder.Token(); err != io.EOF {
+		if err == nil {
+			return fmt.Errorf("tool %q has an invalid raw input schema: unexpected trailing JSON value", tool.Name)
+		}
+		return invalidRawInputSchema(tool, err)
+	}
+	if !foundRootType || rootType != "object" {
+		return fmt.Errorf("tool %q raw input schema must declare root type %q", tool.Name, "object")
+	}
+	return nil
+}
+
+func invalidRawInputSchema(tool mcp.Tool, err error) error {
+	return fmt.Errorf("tool %q has an invalid raw input schema: %w", tool.Name, err)
 }
 
 func (s *Server) registerTool(tool toolset.ServerTool) {
