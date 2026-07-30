@@ -16,7 +16,7 @@
   --image ghcr.io/acme/my-mcp
 ```
 
-该命令会生成构建工作流。只有项目已准备发布时才加 `--with-release`；它会额外生成 npm 和 Docker 的 tag 发布工作流。启用发布前，请先配置所需的镜像仓库凭证和 npm registry。使用 `--dry-run` 可只查看计划，不修改文件。
+该命令会生成构建工作流。只有项目已准备发布时才加 `--with-release`；它会额外生成 npm 和 Docker 的 tag 发布工作流。镜像为 `ghcr.io/...` 时，加 `--use-ghcr` 可使用 `GITHUB_TOKEN` 发布到 GitHub Container Registry，无需 Docker registry 凭证。其他 registry 仍需配置凭证。启用发布前，请先配置 npm registry。使用 `--dry-run` 可只查看计划，不修改文件。
 
 ## 快速开始
 

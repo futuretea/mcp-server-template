@@ -51,6 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # __MCP_DOCKER_PACKAGES_PERMISSION__
     steps:
       - uses: actions/checkout@v4
         with:
@@ -61,8 +62,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: __MCP_DOCKER_USERNAME__
+          password: __MCP_DOCKER_PASSWORD__
       - id: metadata
         name: Set build metadata
         run: echo "build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"

@@ -18,8 +18,10 @@ placeholders before building:
 ```
 
 This creates the build workflow. Add `--with-release` only when the project is
-ready to publish; it also creates npm and Docker tag-release workflows. Configure
-the needed registry credentials and npm registry before enabling a release.
+ready to publish; it also creates npm and Docker tag-release workflows. Add
+`--use-ghcr` with a `ghcr.io/...` image to publish to GitHub Container Registry
+using `GITHUB_TOKEN`, without Docker registry secrets. Other registries continue
+to require their credentials. Configure the npm registry before enabling a release.
 Use `--dry-run` to inspect the planned initialization without changing files.
 
 ## Quick start

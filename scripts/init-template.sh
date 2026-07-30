@@ -12,6 +12,7 @@ binary=''
 npm_package=''
 image=''
 with_release=false
+use_ghcr=false
 dry_run=false
 
 usage() {
@@ -20,7 +21,7 @@ Initialize a repository created from this template.
 
 Usage:
   ./scripts/init-template.sh --module <path> --binary <name> \
-    --npm-package <name> --image <registry/repository> [--with-release] [--dry-run]
+    --npm-package <name> --image <registry/repository> [--with-release] [--use-ghcr] [--dry-run]
 
 Required flags:
   --module <path>         Go module path, for example github.com/acme/my-mcp
@@ -30,6 +31,7 @@ Required flags:
 
 Optional flags:
   --with-release          Install npm and Docker release workflows and package scaffolding
+  --use-ghcr              Use GITHUB_TOKEN for GHCR publishing; requires --with-release and a ghcr.io image
   --dry-run               Print the planned changes without modifying files
   -h, --help              Show this help message
 
@@ -98,6 +100,10 @@ while [ "$#" -gt 0 ]; do
       with_release=true
       shift
       ;;
+    --use-ghcr)
+      use_ghcr=true
+      shift
+      ;;
     --dry-run)
       dry_run=true
       shift
@@ -132,6 +138,11 @@ case "$registry" in
   *) fail '--image must include a registry hostname, for example ghcr.io/acme/my-mcp' ;;
 esac
 
+if [ "$use_ghcr" = true ]; then
+  [ "$with_release" = true ] || fail '--use-ghcr requires --with-release'
+  [ "$registry" = ghcr.io ] || fail '--use-ghcr requires --image to use the ghcr.io registry'
+fi
+
 if [ "$with_release" = true ]; then
   case "${binary%%.*}" in
     con|prn|aux|nul|com[1-9]|lpt[1-9])
@@ -161,12 +172,18 @@ if [ "$with_release" = true ]; then
   require_absent release.mk
   require_marker "$NPM_PLACEHOLDER" templates/npm/package/package.json
   require_marker "$IMAGE_PLACEHOLDER" templates/ci/release-docker.yaml
+  require_marker '__MCP_DOCKER_PACKAGES_PERMISSION__' templates/ci/release-docker.yaml
+  require_marker '__MCP_DOCKER_USERNAME__' templates/ci/release-docker.yaml
+  require_marker '__MCP_DOCKER_PASSWORD__' templates/ci/release-docker.yaml
 fi
 
 if [ "$dry_run" = true ]; then
   printf 'Would initialize this repository with:\n'
   printf '  module: %s\n  binary: %s\n  npm package: %s\n  image: %s\n' \
     "$module" "$binary" "$npm_package" "$image"
+  if [ "$use_ghcr" = true ]; then
+    printf '%s\n' 'Would configure Docker publishing with GITHUB_TOKEN for GHCR'
+  fi
   printf 'Would create .github/workflows/build.yaml\n'
   if [ "$with_release" = true ]; then
     printf '%s\n' 'Would create release workflows, release.mk, npm/, .github/ci/release-platforms.json, and append release usage documentation to both READMEs'
@@ -210,6 +227,15 @@ if [ "$with_release" = true ]; then
   replace_files "$IMAGE_PLACEHOLDER" "$image" "${release_files[@]}"
   replace_files '__MCP_DOCKER_REGISTRY__' "$registry" "${release_files[@]}"
   replace_files '__MCP_GO_VERSION__' "$go_version" "${release_files[@]}"
+  if [ "$use_ghcr" = true ]; then
+    replace_files '# __MCP_DOCKER_PACKAGES_PERMISSION__' 'packages: write' "${release_files[@]}"
+    replace_files '__MCP_DOCKER_USERNAME__' '${{ github.actor }}' "${release_files[@]}"
+    replace_files '__MCP_DOCKER_PASSWORD__' '${{ secrets.GITHUB_TOKEN }}' "${release_files[@]}"
+  else
+    replace_files '# __MCP_DOCKER_PACKAGES_PERMISSION__' '' "${release_files[@]}"
+    replace_files '__MCP_DOCKER_USERNAME__' '${{ secrets.DOCKER_USERNAME }}' "${release_files[@]}"
+    replace_files '__MCP_DOCKER_PASSWORD__' '${{ secrets.DOCKER_PASSWORD }}' "${release_files[@]}"
+  fi
   replace_files '# __MCP_RELEASE_INCLUDE__' '-include release.mk' Makefile
   cat templates/docs/release-usage.md >> README.md
   cat templates/docs/release-usage.zh.md >> README.zh.md

@@ -9,13 +9,16 @@ LDFLAGS := -X example.invalid/mcp-template-module-placeholder/pkg/core/version.V
 
 # __MCP_RELEASE_INCLUDE__
 
-.PHONY: build test lint format tidy ci clean docker coverage
+.PHONY: build test test-template-init lint format tidy ci clean docker coverage
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/$(BINARY_NAME) ./cmd/mcp-server
 
 test:
 	go test ./...
+
+test-template-init:
+	./scripts/test-init-template.sh
 
 lint:
 	go vet ./...
@@ -36,7 +39,7 @@ coverage:
 	go test ./pkg/... -coverprofile=coverage.out
 	go tool cover -func=coverage.out | tail -1
 
-ci: lint test build
+ci: lint test test-template-init build
 
 DOCKER_TAG ?= dev
 
