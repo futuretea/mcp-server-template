@@ -29,6 +29,25 @@ assert_not_contains() {
   fi
 }
 
+assert_actions_pinned() {
+  local file line revision found
+
+  for file in "$@"; do
+    found=false
+    while IFS= read -r line; do
+      if [[ "$line" =~ ^[[:space:]]*-[[:space:]]+uses:[[:space:]]*[^@[:space:]#]+@([^[:space:]#]+) ]]; then
+        found=true
+        revision=${BASH_REMATCH[1]}
+        [[ "$revision" =~ ^[0-9a-f]{40}$ ]] \
+          || fail "expected $file to pin Actions by a 40-character lowercase SHA: $line"
+      elif [[ "$line" =~ ^[[:space:]]*-[[:space:]]+uses: ]]; then
+        fail "expected $file to pin every Action by a 40-character lowercase SHA: $line"
+      fi
+    done <"$file"
+    [ "$found" = true ] || fail "expected $file to contain an Action reference"
+  done
+}
+
 copy_template() {
   local destination=$1
   mkdir -p "$destination"
@@ -85,6 +104,21 @@ release_line=$(grep -n '^  release:$' "$ghcr_workflow" | cut -d: -f1)
 packages_line=$(grep -n '^      packages: write$' "$ghcr_workflow" | cut -d: -f1)
 [ "$packages_line" -gt "$release_line" ] || fail 'expected packages: write to belong to the release job'
 
+build_workflow="$ghcr_template/.github/workflows/build.yaml"
+assert_contains '        run: ./bin/${BINARY_NAME} version' "$build_workflow"
+assert_not_contains '          ./bin/${BINARY_NAME} tools list' "$build_workflow"
+assert_contains '        run: go test -race ./...' "$build_workflow"
+assert_contains '        run: make test-template-init' "$build_workflow"
+
+npm_workflow="$ghcr_template/.github/workflows/release-npm.yaml"
+assert_contains '  validate-release:' "$npm_workflow"
+assert_contains '    needs: [resolve-platforms, validate-tag, validate-release]' "$npm_workflow"
+assert_contains '    needs: [validate-tag, validate-release, build-platform]' "$npm_workflow"
+assert_contains '          registry-url: ${{ vars.NPM_REGISTRY_URL }}' "$npm_workflow"
+assert_contains '          NPM_REGISTRY_URL: ${{ vars.NPM_REGISTRY_URL }}' "$npm_workflow"
+assert_contains '    needs: [resolve-platforms, validate-tag, validate-release]' "$ghcr_workflow"
+assert_actions_pinned "$build_workflow" "$npm_workflow" "$ghcr_workflow"
+
 assert_ignored "$ghcr_template" bin/ghcr-check
 assert_ignored "$ghcr_template" .auto-runs/report.md
 assert_not_ignored "$ghcr_template" npm/acme-ghcr-check/bin/index.js
@@ -94,11 +128,14 @@ copy_template "$generic_template"
 initialize "$generic_template" example.com/generic-check generic-check @acme/generic-check docker.io/acme/generic-check --with-release
 
 generic_workflow="$generic_template/.github/workflows/release-docker.yaml"
+generic_npm_workflow="$generic_template/.github/workflows/release-npm.yaml"
 assert_not_contains '      packages: write' "$generic_workflow"
 assert_contains '          username: ${{ secrets.DOCKER_USERNAME }}' "$generic_workflow"
 assert_contains '          password: ${{ secrets.DOCKER_PASSWORD }}' "$generic_workflow"
 assert_not_contains '          username: ${{ github.actor }}' "$generic_workflow"
 assert_not_contains '          password: ${{ secrets.GITHUB_TOKEN }}' "$generic_workflow"
+assert_contains '  validate-release:' "$generic_workflow"
+assert_actions_pinned "$generic_workflow" "$generic_npm_workflow"
 assert_not_ignored "$generic_template" npm/acme-generic-check/bin/index.js
 
 invalid_template="$test_root/invalid"
