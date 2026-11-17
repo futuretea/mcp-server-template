@@ -118,6 +118,15 @@ assert_contains '          registry-url: ${{ vars.NPM_REGISTRY_URL }}' "$npm_wor
 assert_contains '          NPM_REGISTRY_URL: ${{ vars.NPM_REGISTRY_URL }}' "$npm_workflow"
 assert_contains '    needs: [resolve-platforms, validate-tag, validate-release]' "$ghcr_workflow"
 assert_actions_pinned "$build_workflow" "$npm_workflow" "$ghcr_workflow"
+[ ! -e "$ghcr_template/.github/workflows/ci.yaml" ] || fail 'expected template CI workflow to be removed'
+(cd "$ghcr_template" && go build -mod=readonly -o /dev/null ./cmd/mcp-server) || fail 'expected generated module to build'
+
+broken_build="$test_root/broken-build"
+cp -a "$ghcr_template" "$broken_build"
+printf '\nfunc broken( {\n' >> "$broken_build/pkg/toolset/toolset.go"
+if (cd "$broken_build" && go build -mod=readonly -o /dev/null ./cmd/mcp-server >/dev/null 2>&1); then
+  fail 'expected a broken generated Go file to fail to build'
+fi
 
 assert_ignored "$ghcr_template" bin/ghcr-check
 assert_ignored "$ghcr_template" .auto-runs/report.md
@@ -137,6 +146,7 @@ assert_not_contains '          password: ${{ secrets.GITHUB_TOKEN }}' "$generic_
 assert_contains '  validate-release:' "$generic_workflow"
 assert_actions_pinned "$generic_workflow" "$generic_npm_workflow"
 assert_not_ignored "$generic_template" npm/acme-generic-check/bin/index.js
+[ ! -e "$generic_template/.github/workflows/ci.yaml" ] || fail 'expected template CI workflow to be removed'
 
 invalid_template="$test_root/invalid"
 copy_template "$invalid_template"

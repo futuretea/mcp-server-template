@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -140,8 +141,17 @@ func (s *Server) registerTool(tool toolset.ServerTool) {
 	s.enabledTools = append(s.enabledTools, tool.Tool.Name)
 }
 
+var errArgumentsMustBeObject = errors.New("expected an object")
+
 func newToolHandler(tool toolset.ServerTool) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		raw := request.GetRawArguments()
+		if raw != nil {
+			if _, ok := raw.(map[string]any); !ok {
+				return NewTextResult("", errArgumentsMustBeObject), nil
+			}
+		}
+
 		params := request.GetArguments()
 		if params == nil {
 			params = map[string]any{}
