@@ -185,6 +185,7 @@ if [ "$dry_run" = true ]; then
     printf '%s\n' 'Would configure Docker publishing with GITHUB_TOKEN for GHCR'
   fi
   printf 'Would create .github/workflows/build.yaml\n'
+  printf 'Would remove .github/workflows/ci.yaml when it is present\n'
   if [ "$with_release" = true ]; then
     printf '%s\n' 'Would create release workflows, release.mk, npm/, .github/ci/release-platforms.json, and append release usage documentation to both READMEs'
   fi
@@ -193,6 +194,7 @@ fi
 
 mkdir -p .github/workflows
 cp templates/ci/build.yaml .github/workflows/build.yaml
+rm -f .github/workflows/ci.yaml
 
 replace_files "$MODULE_PLACEHOLDER" "$module" go.mod Makefile Dockerfile README.md README.zh.md
 replace_go_sources "$MODULE_PLACEHOLDER" "$module"
